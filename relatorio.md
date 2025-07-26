@@ -1,58 +1,76 @@
 <sup>Esse é um feedback gerado por IA, ele pode conter erros.</sup>
 
-Você tem 9 créditos restantes para usar o sistema de feedback AI.
+Você tem 8 créditos restantes para usar o sistema de feedback AI.
 
 # Feedback para DaviKandido:
 
-Nota final: **54.8/100**
+Nota final: **64.1/100**
 
-# Feedback para DaviKandido 🚔👮‍♂️
+# Feedback para o DaviKandido 🚓✨
 
-Olá, Davi! Que jornada incrível você está trilhando construindo essa API para o Departamento de Polícia! 🚀 Antes de tudo, quero parabenizá-lo pelos avanços que você já alcançou. Vamos conversar sobre o que está muito bom e onde podemos ajustar para deixar sua aplicação tinindo! 💎
-
----
-
-## 🎉 Pontos Fortes e Conquistas Bônus
-
-- Você implementou corretamente os métodos básicos para criação, leitura, atualização (com PUT) e deleção dos agentes e casos. Isso é fundamental e está bem estruturado!
-- A filtragem simples por status e agente nos casos está funcionando, o que mostra que você entendeu bem como manipular query strings.
-- O uso do `express.Router()` para modularizar as rotas está correto e organizado.
-- A validação com Zod está integrada, e você já trata erros 400 para payloads mal formatados.
-- O tratamento de erros com middleware no `server.js` está implementado e isso é ótimo para capturar erros de forma centralizada.
-
-Você também mandou bem implementando filtros bônus, como a filtragem por status e agente nos casos, parabéns! 🎯
+Olá, Davi! Primeiro, parabéns pelo empenho e pelo esforço em construir essa API para o Departamento de Polícia! 🎉 Você já entregou uma base muito sólida, com várias funcionalidades funcionando bem, e isso é motivo para comemorar! Vamos juntos destrinchar seu código e entender onde podemos melhorar para deixar sua API ainda mais robusta e alinhada com o esperado. Bora lá? 🚀
 
 ---
 
-## 🕵️‍♂️ Análise Profunda dos Pontos de Atenção
+## 🎯 Pontos Fortes que Quero Celebrar
 
-### 1. Atualização Parcial (PATCH) de Agentes e Casos: Falta de Tratamento para IDs Inexistentes e Validações
+- Você estruturou seu projeto de forma modular, com arquivos separados para **controllers**, **repositories** e **routes** — isso é essencial para manter o código organizado e escalável. 👏
+- O uso do middleware global de erro no `server.js` está bem feito, garantindo respostas consistentes para erros e rotas não encontradas.
+- A validação dos dados usando `Zod` e o middleware `validateSchema` para proteger os endpoints está implementada, o que é ótimo para garantir a integridade dos dados. 💪
+- Os endpoints básicos de criação (`POST`), leitura (`GET`), atualização completa (`PUT`) e remoção (`DELETE`) para agentes e casos estão implementados e funcionando, incluindo o tratamento de payloads mal formatados (status 400).
+- Você implementou filtros simples para casos por status e agente, além do filtro por cargo para agentes — isso é um bônus muito bem-vindo! 🌟
 
-Ao analisar seu `agentesController.js` e `casosController.js`, percebi que nos métodos de atualização parcial com PATCH, você está chamando diretamente o repositório para atualizar, mas não está verificando se o agente ou caso existe antes de atualizar. Por exemplo, em `agentesController.js`:
+---
+
+## 🔎 Análise Detalhada: Onde Seu Código Pode Evoluir
+
+### 1. Atualização Parcial (PATCH) para Agentes e Casos não está funcionando corretamente
+
+Você implementou os métodos PATCH para `/agentes/:id` e `/casos/:id` no seu router e controller, mas percebi que os testes esperam que a atualização parcial funcione corretamente, inclusive retornando 404 quando o recurso não existir.
+
+No seu `agentesRoutes.js`:
+
+```js
+router.patch('/:id', validateSchema(agentePatchSchema), agentesController.updateAgente);
+```
+
+E no `agentesController.js`:
 
 ```js
 const updateAgente = (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const agente = req.body;
-    const agenteAtualizado = agentesRepository.update(id, agente);
-    res.status(200).json(agenteAtualizado);
-  } catch (error) {
-    next(new ApiError("Falha ao atualizar o agente: " + error, 500));
-  }
+  // ...
+  const agenteAtualizado = agentesRepository.update(id, agente);
+  // ...
 };
 ```
 
-Aqui, se o `id` não existir, o `agentesRepository.update` retorna `null`, mas você não está tratando esse caso para retornar um 404. Isso faz com que o servidor retorne 200 com `null` ou cause erro interno. O mesmo vale para o `casosController.updateCaso`.
+Aqui está o ponto crítico: seu método `update` no `agentesRepository.js` substitui o objeto inteiro pelo que chega no corpo da requisição, mesmo para PATCH, que deveria atualizar apenas os campos enviados, preservando os demais.
 
-**Como melhorar?** Faça uma verificação explícita após a tentativa de update, assim:
+**Por que isso é um problema?**  
+O PATCH deve fazer uma atualização parcial, ou seja, modificar apenas os campos enviados, sem apagar os demais. Seu repositório está sobrescrevendo o objeto inteiro, o que pode causar perda de dados e comportamento inesperado.
+
+**Como corrigir?**  
+No seu repositório, crie um método específico para atualização parcial, que faça um merge do objeto existente com os novos dados, assim:
 
 ```js
-const updateAgente = (req, res, next) => {
+const updatePartial = (id, partialAgente) => {
+  const index = agentes.findIndex((agente) => agente.id === id);
+  if (index === -1) return null;
+
+  const agenteAtualizado = { ...agentes[index], ...partialAgente, id };
+  agentes[index] = agenteAtualizado;
+  return agenteAtualizado;
+};
+```
+
+E no controller:
+
+```js
+const updateAgentePartial = (req, res, next) => {
   try {
     const { id } = req.params;
-    const agente = req.body;
-    const agenteAtualizado = agentesRepository.update(id, agente);
+    const partialData = req.body;
+    const agenteAtualizado = agentesRepository.updatePartial(id, partialData);
 
     if (!agenteAtualizado) {
       return next(new ApiError("Agente não encontrado", 404));
@@ -65,160 +83,57 @@ const updateAgente = (req, res, next) => {
 };
 ```
 
-Isso garante que você respeite o contrato da API, retornando 404 para recursos inexistentes.
+Faça o mesmo para os casos no `casosRepository.js` e `casosController.js`.
 
 ---
 
-### 2. Validação de Payload Parcial (PATCH) para Agentes: Aceita Alterações no ID e Campos Inválidos
+### 2. Tratamento de 404 para recursos inexistentes está inconsistente
 
-No seu `routes/agentesRoutes.js`, você está usando o middleware `validateSchema` com o schema `agentePatchSchema`. Porém, no repositório e no controller, não há uma proteção para impedir que o campo `id` seja alterado via PATCH, o que não deveria ser permitido.
+Vi que seu código tem boas verificações para retornar 404 quando um agente ou caso não é encontrado, mas alguns endpoints, especialmente os de atualização parcial e completa, estão falhando nesse aspecto.
 
-Além disso, as penalidades indicam que você está permitindo um cargo vazio e datas de incorporação no futuro, o que aponta que seu esquema Zod para validação não está cobrindo essas regras.
-
-**Por que isso acontece?** Porque o schema de validação não está validando restrições importantes, e o controller/repositório não está protegendo o campo `id`.
-
-**Como corrigir?**
-
-- No seu schema Zod para PATCH, garanta que o campo `id` não seja aceito para atualização.
-- Valide que `cargo` não seja vazio e que `dataDeIncorporacao` não seja uma data futura.
-  
-Exemplo de validação para `dataDeIncorporacao` com Zod:
+Por exemplo, no `updateAgente`:
 
 ```js
-import { z } from "zod";
-
-const agentePatchSchema = z.object({
-  nome: z.string().min(1).optional(),
-  cargo: z.string().min(1, "Cargo não pode ser vazio").optional(),
-  dataDeIncorporacao: z
-    .string()
-    .refine((dateStr) => {
-      const date = new Date(dateStr);
-      const now = new Date();
-      return date <= now;
-    }, { message: "Data de incorporação não pode ser no futuro" })
-    .optional(),
-}).strict(); // strict para não permitir campos extras como id
-```
-
-Assim, você evita que o campo `id` seja alterado e garante que os dados sejam coerentes.
-
-**Recurso recomendado:** Para aprender mais sobre validação com Zod e como garantir integridade dos dados, veja esse vídeo:  
-https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_
-
----
-
-### 3. Criação e Atualização de Casos com `agente_id` Inexistente: Falta de Validação
-
-Notei que no método `createCaso` do `casosController.js`, você simplesmente chama o repositório para criar o caso, sem validar se o `agente_id` enviado realmente existe no repositório de agentes. Isso pode gerar casos associados a agentes que não existem, o que é um problema grave de integridade.
-
-Veja seu código:
-
-```js
-const createCaso = (req, res, next) => {
-    try {
-        const caso = req.body;
-        const casoCreado = casosRepository.create(caso);
-        res.status(201).json(casoCreado);
-    } catch (error) {
-        next(new ApiError("Falha ao criar o caso: " + error, 500));
-    }
-};
-```
-
-**O que falta?** Antes de criar, verificar se `agentesRepository.findById(caso.agente_id)` retorna um agente válido. Se não, retornar erro 404 com mensagem personalizada.
-
-Exemplo de ajuste:
-
-```js
-const createCaso = (req, res, next) => {
-  try {
-    const caso = req.body;
-
-    const agenteExiste = agentesRepository.findById(caso.agente_id);
-    if (!agenteExiste) {
-      return res.status(404).json({
-        status: 404,
-        message: "Agente não encontrado para o agente_id fornecido",
-      });
-    }
-
-    const casoCriado = casosRepository.create(caso);
-    res.status(201).json(casoCriado);
-  } catch (error) {
-    next(new ApiError("Falha ao criar o caso: " + error, 500));
-  }
-};
-```
-
-Faça o mesmo para update (PUT/PATCH) de casos.
-
-**Recurso recomendado:** Para entender melhor como fazer validação de dados e tratamento de erros 404, veja:  
-https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/404
-
----
-
-### 4. Respostas e Tratamento de Erros Inconsistentes na Busca por ID
-
-No `agentesController.getAgenteById` você não verifica se o agente existe antes de retornar:
-
-```js
-const getAgenteById = (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const agente = agentesRepository.findById(id);
-    res.status(200).json(agente);
-  } catch (error) {
-    next(new ApiError("Falha ao obter o agente: " + error, 500));
-  }
-};
-```
-
-Se o agente não existir, vai retornar `null` com status 200, o que não é correto. O correto é retornar 404 com mensagem personalizada.
-
-Mesma situação no `casosController.getCasoById`.
-
-**Como corrigir?**
-
-```js
-const getAgenteById = (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const agente = agentesRepository.findById(id);
-
-    if (!agente) {
-      return next(new ApiError("Agente não encontrado", 404));
-    }
-
-    res.status(200).json(agente);
-  } catch (error) {
-    next(new ApiError("Falha ao obter o agente: " + error, 500));
-  }
-};
-```
-
----
-
-### 5. Implementação da Busca do Agente Responsável por Caso (Filtro Bônus Falho)
-
-Você tem no `casosController.getCasoById` um trecho que tenta retornar o agente pelo query param `agente_id`:
-
-```js
-if(req.query.agente_id){
-    const agente = agentesRepository.findById(req.query.agente_id);
-    if(!agente){
-        return next(new ApiError("Agente referente ao caso nao encontrado", 404));
-    }
-    res.status(200).json(agente);
-    return;
+const agenteAtualizado = agentesRepository.update(id, agente);
+if (!agenteAtualizado) {
+  return next(new ApiError("Agente nao encontrado", 404));
 }
 ```
 
-Mas isso não segue o que a especificação do endpoint `/casos/{id}` espera. Geralmente, para retornar o agente responsável junto com o caso, o ideal é fazer um join manual, retornando um objeto que contenha os dados do caso e do agente juntos, ou criar um endpoint separado para isso.
+Isso está correto, mas no PATCH, como seu método `update` sobrescreve tudo, pode estar causando problemas e não encontrando o agente para atualizar.
 
-Além disso, o uso do `agente_id` como query param nesse endpoint pode confundir, pois o `id` do caso já é o identificador principal.
+**Dica:** Garanta que todos os métodos de update e delete validem a existência do recurso antes de tentar modificar ou remover, e que retornem 404 se não encontrado.
 
-**Sugestão:** Implemente um endpoint dedicado para retornar o agente responsável por um caso, ou modifique o retorno do `getCasoById` para incluir o agente:
+---
+
+### 3. Endpoint para buscar o agente responsável pelo caso (Filtro por agente no GET /casos/:id)
+
+No seu `casosController.js`, o método `getCasoById` tem essa lógica:
+
+```js
+if (req.query.agente_id) {
+  const agente = agentesRepository.findById(req.query.agente_id);
+  if (!agente) {
+    return next(
+      new ApiError("Agente referente ao caso nao encontrado", 404)
+    );
+  }
+  res.status(200).json(agente);
+  return;
+}
+```
+
+O problema aqui é que o endpoint `/casos/:id` deve retornar os dados do caso e, se a query `agente_id` estiver presente, também retornar os dados completos do agente responsável **do mesmo caso**. Mas você está buscando o agente pelo `agente_id` da query, não pelo `agente_id` do caso.
+
+Além disso, a especificação pede que esse endpoint retorne o caso com os dados do agente embutidos, ou pelo menos que retorne o agente relacionado, não apenas o agente de `req.query.agente_id`.
+
+**Como melhorar:**
+
+- Busque o caso pelo `id` da URL.
+- Se `req.query.agente_id` for fornecido, valide se ela corresponde ao `agente_id` do caso.
+- Retorne o caso junto com os dados do agente responsável.
+
+Exemplo simplificado:
 
 ```js
 const getCasoById = (req, res, next) => {
@@ -227,27 +142,63 @@ const getCasoById = (req, res, next) => {
     const caso = casosRepository.findById(id);
 
     if (!caso) {
-      return next(new ApiError("Caso não encontrado", 404));
+      return next(new ApiError("Caso nao encontrado", 404));
     }
 
-    const agente = agentesRepository.findById(caso.agente_id);
+    if (req.query.agente_id) {
+      if (req.query.agente_id !== caso.agente_id) {
+        return next(new ApiError("Agente referente ao caso nao encontrado", 404));
+      }
+      const agente = agentesRepository.findById(caso.agente_id);
+      if (!agente) {
+        return next(new ApiError("Agente referente ao caso nao encontrado", 404));
+      }
+      res.status(200).json({ caso, agente });
+      return;
+    }
 
-    res.status(200).json({ caso, agente });
+    res.status(200).json(caso);
   } catch (error) {
     next(new ApiError("Falha ao obter o caso: " + error, 500));
   }
 };
 ```
 
-Assim, você entrega uma resposta mais completa e evita confusão.
+---
+
+### 4. Validação e mensagens de erro customizadas para filtros e parâmetros inválidos
+
+Você implementou filtros legais para agentes por cargo e casos por status e agente, mas as mensagens de erro customizadas para parâmetros inválidos ainda estão incompletas.
+
+Por exemplo, no filtro de casos por status:
+
+```js
+if (req.query.status !== "aberto" && req.query.status !== "solucionado") {
+  return res.status(400).json({
+    status: 400,
+    message: "Parâmetros inválidos",
+    errors: [
+      {
+        status:
+          "O campo 'status' pode ser somente 'aberto' ou 'solucionado' ",
+      },
+    ],
+  });
+}
+```
+
+Isso está ótimo, mas seria interessante aplicar o mesmo cuidado para os filtros de agentes (cargo, data de incorporação), e para outros parâmetros, garantindo que o cliente da API sempre receba mensagens claras e padronizadas.
 
 ---
 
-### 6. Organização da Estrutura de Diretórios
+### 5. Organização da Estrutura do Projeto
 
-Sua estrutura está bem próxima do esperado, mas notei que o arquivo `app.js` está presente, mas não foi mostrado seu conteúdo. É importante garantir que no `app.js` você está importando as rotas e usando os middlewares corretamente, já que no `server.js` você só importa `app`.
+Sua estrutura está muito próxima do esperado, porém notei que o arquivo `app.js` está presente, mas não foi mostrado no código enviado. Certifique-se de que:
 
-Certifique-se de que em `app.js` você tenha algo assim:
+- O arquivo `app.js` exporta o app Express corretamente, importando e usando as rotas de agentes e casos.
+- O `server.js` importa o `app.js` e inicia o servidor.
+
+Por exemplo, o `app.js` deve ter algo assim:
 
 ```js
 const express = require('express');
@@ -255,6 +206,7 @@ const app = express();
 
 app.use(express.json());
 
+// Importa rotas
 const agentesRoutes = require('./routes/agentesRoutes');
 const casosRoutes = require('./routes/casosRoutes');
 
@@ -264,48 +216,40 @@ app.use('/casos', casosRoutes);
 module.exports = app;
 ```
 
-Se isso não estiver implementado, seus endpoints não funcionarão, o que pode ser a raiz de vários erros.
-
-**Recurso recomendado:** Para entender como organizar rotas no Express e estruturar seu projeto, veja:  
-https://expressjs.com/pt-br/guide/routing.html  
-https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH
+Sem isso, seus endpoints não estarão ativos, o que pode levar a falhas em várias funcionalidades.
 
 ---
 
-## 💡 Recomendações Gerais
+## 📚 Recursos para Você Aprimorar Esses Pontos
 
-- **Valide sempre os dados recebidos**, não só com Zod, mas também no controller, garantindo que IDs referenciados existam.
-- **Responda com status HTTP apropriados**, especialmente 404 para recursos não encontrados e 400 para dados inválidos.
-- **Proteja campos que não devem ser alterados**, como `id`, principalmente em PATCH.
-- **Faça verificações antes de atualizar ou deletar**, para evitar operações em recursos inexistentes.
-- **Inclua mensagens de erro claras e personalizadas**, isso ajuda muito na usabilidade da API.
-- **Revise seu middleware de validação para garantir que rejeite dados inválidos**, como datas futuras ou campos vazios.
+- Para entender melhor como trabalhar com PATCH e atualizações parciais:  
+  https://expressjs.com/pt-br/guide/routing.html (seção de métodos HTTP e roteamento)  
+  https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_ (validação de dados e tratamento de erros)
 
----
+- Para garantir tratamento correto de erros 404 e 400, e mensagens customizadas:  
+  https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/404  
+  https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400
 
-## 📝 Resumo Rápido dos Principais Pontos para Melhorar
-
-- [ ] Tratar retorno 404 quando recurso (agente ou caso) não existe em GET, PUT, PATCH e DELETE.
-- [ ] Validar existência de `agente_id` em criação e atualização de casos antes de persistir.
-- [ ] Ajustar schemas Zod para impedir alteração do campo `id` e validar campos obrigatórios corretamente (ex: cargo não vazio, dataDeIncorporacao não futura).
-- [ ] Revisar lógica do endpoint `/casos/:id` para incluir dados do agente responsável de forma clara, evitando confusão com query params.
-- [ ] Garantir que o arquivo `app.js` importe e use corretamente as rotas e middlewares.
-- [ ] Melhorar mensagens de erro personalizadas para casos de parâmetros inválidos e recursos não encontrados.
+- Para organizar seu projeto com arquitetura MVC e estruturar o app.js e server.js corretamente:  
+  https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH
 
 ---
 
-Davi, seu esforço está muito claro e você já tem uma base sólida! Com esses ajustes, sua API vai ficar mais robusta, confiável e alinhada com as boas práticas de desenvolvimento RESTful. Continue firme, você está no caminho certo! 💪✨
+## 🔥 Resumo Rápido para Você Focar
 
-Se precisar, dê uma olhada nesses recursos para reforçar os conceitos:
+- **Implemente atualização parcial (PATCH) corretamente, fazendo merge dos dados parciais no repositório.**
+- **Garanta que todos os endpoints retornem 404 quando o recurso não existir, especialmente para PUT, PATCH e DELETE.**
+- **Ajuste o endpoint `/casos/:id` para retornar o caso junto com o agente responsável quando solicitado via query string, usando o `agente_id` do caso, não da query.**
+- **Melhore as mensagens de erro customizadas para filtros inválidos em agentes e casos.**
+- **Confirme que o arquivo `app.js` está configurado para usar as rotas e que o `server.js` importa e executa o app corretamente.**
 
-- [Validação de dados em APIs Node.js](https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_)  
-- [Tratamento de erros 400 e 404](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400) e (https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/404)  
-- [Organização de rotas com Express.js](https://expressjs.com/pt-br/guide/routing.html)  
-- [Arquitetura MVC em Node.js](https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH)
+---
 
-Qualquer dúvida, estou aqui para te ajudar! 🚓👨‍💻
+Davi, você está no caminho certo! Seu código mostra muita dedicação e entendimento das boas práticas. Com algumas melhorias pontuais, sua API vai ficar completíssima, robusta e pronta para qualquer desafio que o Departamento de Polícia precisar! 👮‍♂️💻
 
-Bons códigos e até a próxima! 🚀😊
+Continue assim, sempre estudando e evoluindo. Estou aqui para te ajudar no que precisar! 🚀😉
+
+Abraços e até a próxima revisão! 👋✨
 
 > Caso queira tirar uma dúvida específica, entre em contato com o Chapter no nosso [discord](https://discord.gg/DryuHVnz).
 
