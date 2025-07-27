@@ -2,6 +2,7 @@ const z = require("zod");
 
 const baseAgenteSchema = z
   .object({
+
     nome: z
       .string({
         error: (issue) => {
@@ -11,6 +12,7 @@ const baseAgenteSchema = z
         },
       })
       .min(1, "O campo 'nome' precisa ter pelo menos 1 caractere"),
+
     dataDeIncorporacao: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, {
@@ -30,6 +32,7 @@ const baseAgenteSchema = z
         },
         { message: "Data de incorporação não pode ser no futuro" }
       ),
+
     cargo: z
       .string({
         error: (issue) => {
@@ -48,6 +51,7 @@ const agentePatchSchema = baseAgenteSchema.strict().partial();
 
 const baseCasosSchema = z
   .object({
+    
     titulo: z
       .string({
         error: (issue) => {

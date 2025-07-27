@@ -25,7 +25,6 @@ Status HTTP esperados: 201, 200, 204, 400, 404.
 
 const { v4: uuidv4 } = require("uuid");
 
-
 const casos = [
   {
     id: uuidv4(),
@@ -149,43 +148,51 @@ const casos = [
   },
 ];
 
-
-
 const findAll = () => casos;
 
 const findById = (id) => casos.find((caso) => caso.id === id);
 
-
 const create = (caso) => {
-    const newCaso = { id: uuidv4(), ...caso };
-    casos.push(newCaso);
-    return newCaso;
+  const newCaso = { id: uuidv4(), ...caso };
+  casos.push(newCaso);
+  return newCaso;
 };
 
 const update = (id, caso) => {
-    const index = casos.findIndex((caso) => caso.id === id);
-    if (index === -1) {
-        return null;
-    }
-    const updatedCaso = { id, ...caso };
-    casos[index] = updatedCaso;
-    return updatedCaso;
+  const index = casos.findIndex((caso) => caso.id === id);
+  if (index === -1) {
+    return null;
+  }
+  const updatedCaso = { id, ...caso };
+  casos[index] = updatedCaso;
+  return updatedCaso;
+};
+
+const updatePartial = (id, caso) => {
+  const index = casos.findIndex((caso) => caso.id === id);
+  if (index === -1) {
+    return null;
+  }
+  const updatedCaso = { ...casos[index], ...caso, id };
+  casos[index] = updatedCaso;
+  return updatedCaso;
 };
 
 const remove = (id) => {
-    const index = casos.findIndex((caso) => caso.id === id);
-    if (index === -1) {
-        return null;
-    }
-    const removedCaso = casos[index];
-    casos.splice(index, 1);
-    return removedCaso;
+  const index = casos.findIndex((caso) => caso.id === id);
+  if (index === -1) {
+    return null;
+  }
+  const removedCaso = casos[index];
+  casos.splice(index, 1);
+  return removedCaso;
 };
 
 module.exports = {
-    findAll,
-    findById,
-    create,
-    update,
-    remove
+  findAll,
+  findById,
+  create,
+  update,
+  updatePartial,
+  remove,
 };

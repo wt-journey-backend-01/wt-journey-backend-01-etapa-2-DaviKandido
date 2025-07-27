@@ -404,7 +404,7 @@ router.put("/:id", validateSchema(casoPutSchema), casosController.updateCaso);
  *                 status: 500
  *                 message: Falha ao atualizar o caso 
  */
-router.patch('/:id', validateSchema(casoPatchSchema),casosController.updateCaso);
+router.patch('/:id', validateSchema(casoPatchSchema),casosController.updateCasoPartial);
 
 // Remove um caso.
 /**

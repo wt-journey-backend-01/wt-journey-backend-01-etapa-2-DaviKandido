@@ -10,6 +10,19 @@ const getAgentes = (req, res, next) => {
     }
 
     if (req.query.cargo) {
+      if (req.query.cargo !== "inspetor" && req.query.cargo !== "delegado") {
+        return res.status(400).json({
+          status: 400,
+          message: "Parâmetros inválidos",
+          errors: [
+            {
+              status:
+                "O campo 'cargo' pode ser somente 'inspetor' ou 'delegado' ",
+            },
+          ],
+        });
+      }
+
       const agentesFiltrados = agentes.filter(
         (agente) => agente.cargo === req.query.cargo
       );
@@ -17,18 +30,37 @@ const getAgentes = (req, res, next) => {
       return;
     }
 
-    if (req.query.sort === "dataDeIncorporacao") {
-      agentes.sort(
-        (a, b) =>
-          new Date(a.dataDeIncorporacao) - new Date(b.dataDeIncorporacao)
-      );
+    if (req.query.sort){
+      if (
+        req.query.sort !== "dataDeIncorporacao" &&
+        req.query.sort !== "-dataDeIncorporacao"
+      ) {
+        return res.status(400).json({
+          status: 400,
+          message: "Parâmetros inválidos",
+          errors: [
+            {
+              status:
+                "O campo 'sort' pode ser somente 'dataDeIncorporacao' ou '-dataDeIncorporacao' ",
+            },
+          ],
+        });
+      }
+
+      if (req.query.sort === "dataDeIncorporacao") {
+        agentes.sort(
+          (a, b) =>
+            new Date(a.dataDeIncorporacao) - new Date(b.dataDeIncorporacao)
+        );
+      }
+      if (req.query.sort === "-dataDeIncorporacao") {
+        agentes.sort(
+          (a, b) =>
+            new Date(b.dataDeIncorporacao) - new Date(a.dataDeIncorporacao)
+        );
+      }
     }
-    if (req.query.sort === "-dataDeIncorporacao") {
-      agentes.sort(
-        (a, b) =>
-          new Date(b.dataDeIncorporacao) - new Date(a.dataDeIncorporacao)
-      );
-    }
+
 
     res.status(200).json(agentes);
   } catch (error) {
@@ -77,6 +109,22 @@ const updateAgente = (req, res, next) => {
   }
 };
 
+const updateAgentePartial = (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const agentePartial = req.body;
+    const agenteAtualizado = agentesRepository.updatePartial(id, agentePartial);
+
+    if (!agenteAtualizado) {
+      return next(new ApiError("Agente nao encontrado", 404));
+    }
+
+    res.status(200).json(agenteAtualizado);
+  } catch (error) {
+    next(new ApiError("Falha ao atualizar o agente: " + error, 500));
+  }
+};
+
 const deleteAgente = (req, res, next) => {
   try {
     const { id } = req.params;
@@ -97,5 +145,6 @@ module.exports = {
   getAgenteById,
   createAgente,
   updateAgente,
+  updateAgentePartial,
   deleteAgente,
 };

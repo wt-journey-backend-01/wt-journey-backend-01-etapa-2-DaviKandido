@@ -332,7 +332,7 @@ router.put('/:id', validateSchema(agentePutSchema), agentesController.updateAgen
  *                 status: 500
  *                 message: Falha ao atualizar o agente 
  */
-router.patch('/:id', validateSchema(agentePatchSchema),agentesController.updateAgente);
+router.patch('/:id', validateSchema(agentePatchSchema),agentesController.updateAgentePartial);
 
 
 // Remove um caso.

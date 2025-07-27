@@ -115,6 +115,16 @@ const update = (id, agente) => {
   return updatedagente;
 };
 
+const updatePartial = (id, agente) => {
+  const index = agentes.findIndex((agente) => agente.id === id);
+  if (index === -1) {
+    return null;
+  }
+  const updatedagente = { ...agentes[index], ...agente, id };
+  agentes[index] = updatedagente;
+  return updatedagente;
+};
+
 const remove = (id) => {
   const index = agentes.findIndex((agente) => agente.id === id);
   if (index === -1) {
@@ -130,5 +140,6 @@ module.exports = {
   findById,
   create,
   update,
+  updatePartial,
   remove,
 };

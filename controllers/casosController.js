@@ -10,11 +10,16 @@ const getCasos = (req, res, next) => {
       const casosFiltrados = casos.filter(
         (caso) => caso.agente_id === req.query.agente_id
       );
+
+      if (!casosFiltrados) {
+        return next(new ApiError("Casos nao encontrados", 404));
+      }
+      
       res.status(200).json(casosFiltrados);
       return;
     }
 
-    if (req.query.status || req.query.status) {
+    if (req.query.status) {
       if (req.query.status !== "aberto" && req.query.status !== "solucionado") {
         return res.status(400).json({
           status: 400,
@@ -73,13 +78,20 @@ const getCasoById = (req, res, next) => {
     }
 
     if (req.query.agente_id) {
-      const agente = agentesRepository.findById(req.query.agente_id);
+      
+      if (req.query.agente_id !== caso.agente_id) {
+        return next(
+          new ApiError("Agente referente ao caso nao encontrado", 404)
+        );
+      }
+
+      const agente = agentesRepository.findById(caso.agente_id);
       if (!agente) {
         return next(
           new ApiError("Agente referente ao caso nao encontrado", 404)
         );
       }
-      res.status(200).json(agente);
+      res.status(200).json({ caso, agente });
       return;
     }
 
@@ -131,6 +143,28 @@ const updateCaso = (req, res, next) => {
   }
 };
 
+const updateCasoPartial = (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const casoPartial = req.body;
+
+    const agente = agentesRepository.findById(casoPartial.agente_id);
+    if (!agente) {
+      return next(new ApiError("Agente referente ao caso nao encontrado", 404));
+    }
+
+    const casoAtualizado = casosRepository.updatePartial(id, casoPartial);
+
+    if (!casoAtualizado) {
+      return next(new ApiError("Caso nao encontrado", 404));
+    }
+
+    res.status(200).json(casoAtualizado);
+  } catch (error) {
+    next(new ApiError("Falha ao atualizar o caso: " + error, 500));
+  }
+};
+
 const deleteCaso = (req, res, next) => {
   try {
     const deleted = casosRepository.remove(req.params.id);
@@ -151,5 +185,6 @@ module.exports = {
   getSearch,
   createCaso,
   updateCaso,
+  updateCasoPartial,
   deleteCaso,
 };

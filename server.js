@@ -1,30 +1,49 @@
-const app = require('./app');
+const express = require("express");
+const swagger = require("./docs/swagger");
+const app = express();
 
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+const casosRouter = require("./routes/casosRoutes");
+const agentesRouter = require("./routes/agentesRoutes");
+
+app.use((req, res, next) => {
+  console.log(
+    `${new Date().toLocaleString()} | Requisição: ${req.method} ${req.url}`
+  );
+  next();
+});
+
+app.use("/casos", casosRouter);
+app.use("/agentes", agentesRouter);
+
+
+swagger(app);
 
 const PORT = process.env.PORT || 3000;
 
 // Catch-all para rotas não encontradas → envia para o middleware de erro
 app.use((req, res, next) => {
-    const error = new Error('Page not found!');
-    error.status = 404;
-    next(error); // passa para o middleware de erro
+  const error = new Error("Page not found!");
+  error.status = 404;
+  next(error); // passa para o middleware de erro
 });
 
 // Middleware de erro que trata 404 e demais erros
 app.use((err, req, res, next) => {
-    res.status(err.status || 500).json({
-        message: err.message || "Something went wrong!",
-        status: err.status || 500,
-        url: req.url,
-        method: req.method,
-        query: req.query,
-        params: req.params,
-        headers: req.headers,
-        body: req.body,
-        errors: [{...err}] // opcional, útil para debug
-    });
+  res.status(err.status || 500).json({
+    message: err.message || "Something went wrong!",
+    status: err.status || 500,
+    url: req.url,
+    method: req.method,
+    query: req.query,
+    params: req.params,
+    headers: req.headers,
+    body: req.body,
+    errors: [{ ...err }], // opcional, útil para debug
+  });
 });
-
 
 app.listen(PORT, () => {
   console.log(
