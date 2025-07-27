@@ -169,20 +169,14 @@ router.get("/search", casosController.getSearch);
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items: 
- *                 $ref: '#/components/schemas/caso'
+ *               type: object
  *               example:
- *                  - id: f5fb2ad5-22a8-4cb4-90f2-8733517a0d46
- *                    titulo: homicidio
- *                    descricao: Disparos foram reportados às 22:33 do dia 10/07/2007 na região do bairro União, resultando na morte da vítima, um homem de 45 anos.
- *                    status: aberto
- *                    agente_id: 401bccf5-cf9e-489d-8412-446cd169a0f1
- *                  - id: f5fb2ad5-22a8-4cb4-90f2-8733517a0d46
- *                    titulo: homicidio
- *                    descricao: Disparos foram reportados às 22:33 do dia 10/07/2007 na região do bairro União, resultando na morte da vítima, um homem de 45 anos.
- *                    status: aberto
- *                    agente_id: 401bccf5-cf9e-489d-8412-446cd169a0f1
+ *                  id: f5fb2ad5-22a8-4cb4-90f2-8733517a0d46
+ *                  titulo: homicidio
+ *                  descricao: Disparos foram reportados às 22:33 do dia 10/07/2007 na região do bairro União, resultando na morte da vítima, um homem de 45 anos.
+ *                  status: aberto
+ *                  agente_id: 401bccf5-cf9e-489d-8412-446cd169a0f1
+ *                  
  *       404:
  *         description: caso não encontrados
  *         content:
@@ -269,7 +263,7 @@ router.post("/", validateSchema(casoPostSchema), casosController.createCaso);
 // Atualiza os dados de um caso por completo.
 /**
  * @openapi
- * /casos:
+ * /casos/{id}:
  *   put:
  *     summary: Atualiza um caso
  *     description: Essa rota atualiza um caso.
@@ -343,7 +337,7 @@ router.put("/:id", validateSchema(casoPutSchema), casosController.updateCaso);
 // Atualiza os dados de um caso parcialmente.
 /**
  * @openapi
- * /casos:
+ * /casos/{id}:
  *   patch:
  *     summary: Atualiza um caso parcialmente
  *     description: Essa rota atualiza um caso parcialmente.
@@ -414,7 +408,7 @@ router.patch('/:id', validateSchema(casoPatchSchema),casosController.updateCasoP
 // Remove um caso.
 /**
  * @openapi
- * /casos:
+ * /casos/{id}:
  *   delete:
  *     summary: deleta um caso
  *     description: Essa rota deleta um caso.

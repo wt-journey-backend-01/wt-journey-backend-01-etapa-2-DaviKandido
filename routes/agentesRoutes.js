@@ -106,14 +106,12 @@ router.get('/', agentesController.getAgentes);
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items: 
- *                 $ref: '#/components/schemas/Agente'
+ *               type: object
  *               example:
- *                 - id: 401bccf5-cf9e-489d-8412-446cd169a0f1
- *                   nome: Rommel Carneiro
- *                   dataDeIncorporacao: 1992/10/04
- *                   cargo: delegado
+ *                 id: 401bccf5-cf9e-489d-8412-446cd169a0f1
+ *                 nome: Rommel Carneiro
+ *                  dataDeIncorporacao: 1992/10/04
+ *                  cargo: delegado
  *       404:
  *         description: Agente não encontrados
  *         content:
@@ -196,7 +194,7 @@ router.post("/", validateSchema(agentePostSchema), agentesController.createAgent
 // Atualiza os dados de um caso por completo.
 /**
  * @openapi
- * /agentes:
+ * /agentes/{id}:
  *   put:
  *     summary: Atualiza um agente
  *     description: Essa rota atualiza um agente.
@@ -267,7 +265,7 @@ router.put('/:id', validateSchema(agentePutSchema), agentesController.updateAgen
 // Atualiza os dados de um caso parcialmente.
 /**
  * @openapi
- * /agentes:
+ * /agentes/{id}:
  *   patch:
  *     summary: Atualiza um agente parcialmente
  *     description: Essa rota atualiza um agente parcialmente.
@@ -338,7 +336,7 @@ router.patch('/:id', validateSchema(agentePatchSchema),agentesController.updateA
 // Remove um caso.
 /**
  * @openapi
- * /agentes:
+ * /agentes/{id}:
  *   delete:
  *     summary: deleta um agente
  *     description: Essa rota deleta um agente.

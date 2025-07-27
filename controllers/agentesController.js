@@ -10,15 +10,25 @@ const getAgentes = (req, res, next) => {
     }
 
     if (req.query.cargo) {
-      const cargosValidos = ["inspetor", "inspetora", "delegado", "delegada", "investigador", "escrivã", "escrivão", "perito", "perita"];
+      const cargosValidos = [
+        "inspetor",
+        "inspetora",
+        "delegado",
+        "delegada",
+        "investigador",
+        "escrivã",
+        "escrivão",
+        "perito",
+        "perita",
+      ];
       if (!cargosValidos.includes(req.query.cargo)) {
         return res.status(400).json({
           status: 400,
           message: "Parâmetros inválidos",
           errors: [
             {
-              status:
-                "O campo 'cargo' pode ser somente 'inspetor' ou 'delegado' ",
+              cargo:
+                "O campo 'cargo' pode ser somente um dos seguintes valores: inspetor, inspetora, delegado, delegada, investigador, escrivã, escrivão, perito, perita",
             },
           ],
         });
@@ -31,7 +41,7 @@ const getAgentes = (req, res, next) => {
       return;
     }
 
-    if (req.query.sort){
+    if (req.query.sort) {
       if (
         req.query.sort !== "dataDeIncorporacao" &&
         req.query.sort !== "-dataDeIncorporacao"
@@ -61,7 +71,6 @@ const getAgentes = (req, res, next) => {
         );
       }
     }
-
 
     res.status(200).json(agentes);
   } catch (error) {
@@ -135,7 +144,7 @@ const deleteAgente = (req, res, next) => {
       return next(new ApiError("agente nao encontrado", 404));
     }
 
-    res.status(204).json();
+    res.status(204).send();
   } catch (error) {
     next(new ApiError("Falha ao deletar o agente: " + error, 500));
   }

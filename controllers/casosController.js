@@ -11,7 +11,7 @@ const getCasos = (req, res, next) => {
         (caso) => caso.agente_id === req.query.agente_id
       );
 
-      if (!casosFiltrados) {
+      if (!casosFiltrados.length === 0) {
         return next(new ApiError("Casos nao encontrados", 404));
       }
       
@@ -58,6 +58,12 @@ const getSearch = (req, res, next) => {
           caso.titulo.toLowerCase().includes(req.query.q.toLowerCase()) ||
           caso.descricao.toLowerCase().includes(req.query.q.toLowerCase())
       );
+
+
+      if (!casosFiltrados.length === 0) {
+        return next(new ApiError("Casos nao encontrados", 404));
+      }
+
       res.status(200).json(casosFiltrados);
       return;
     }
@@ -80,6 +86,13 @@ const getCasoById = (req, res, next) => {
     if (req.query.agente_id) {
       
       if (req.query.agente_id !== caso.agente_id) {
+        return next(
+          new ApiError("Agente referente ao caso nao encontrado", 404)
+        );
+      }
+
+      const agenteQuery = agentesRepository.findById(req.query.agente_id);
+      if (!agenteQuery) {
         return next(
           new ApiError("Agente referente ao caso nao encontrado", 404)
         );
@@ -177,7 +190,7 @@ const deleteCaso = (req, res, next) => {
       return next(new ApiError("Caso nao encontrado", 404));
     }
 
-    res.status(204).json();
+    res.status(204).send();
   } catch (error) {
     next(new ApiError("Falha ao deletar o caso: " + error, 500));
   }
