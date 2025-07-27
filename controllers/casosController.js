@@ -148,9 +148,13 @@ const updateCasoPartial = (req, res, next) => {
     const { id } = req.params;
     const casoPartial = req.body;
 
-    const agente = agentesRepository.findById(casoPartial.agente_id);
-    if (!agente) {
-      return next(new ApiError("Agente referente ao caso nao encontrado", 404));
+    if (casoPartial.agente_id) {
+      const agente = agentesRepository.findById(casoPartial.agente_id);
+        if (!agente) {
+          return next(
+            new ApiError("Agente referente ao caso nao encontrado", 404)
+          );
+        }
     }
 
     const casoAtualizado = casosRepository.updatePartial(id, casoPartial);

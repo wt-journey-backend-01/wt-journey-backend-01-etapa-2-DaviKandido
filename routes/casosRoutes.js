@@ -27,7 +27,7 @@ const { validateSchema } = require("../utils/validateSchemas");
  *         descricao:
  *           type: string
  *         status:
- *           type: enum
+ *           type: string
  *           enum: [aberto, solucionado]
  *         agente_id:
  *           type: string
@@ -161,7 +161,7 @@ router.get("/search", casosController.getSearch);
  *         name: agente_id
  *         schema:
  *           type: string
- *         description: Retorna os dados completos do agente responsável por um caso específico.
+ *         description: Retorna os dados completos do agente responsável por um junto do caso específico.
  * 
  *     responses:
  *       200:
@@ -173,6 +173,11 @@ router.get("/search", casosController.getSearch);
  *               items: 
  *                 $ref: '#/components/schemas/caso'
  *               example:
+ *                  - id: f5fb2ad5-22a8-4cb4-90f2-8733517a0d46
+ *                    titulo: homicidio
+ *                    descricao: Disparos foram reportados às 22:33 do dia 10/07/2007 na região do bairro União, resultando na morte da vítima, um homem de 45 anos.
+ *                    status: aberto
+ *                    agente_id: 401bccf5-cf9e-489d-8412-446cd169a0f1
  *                  - id: f5fb2ad5-22a8-4cb4-90f2-8733517a0d46
  *                    titulo: homicidio
  *                    descricao: Disparos foram reportados às 22:33 do dia 10/07/2007 na região do bairro União, resultando na morte da vítima, um homem de 45 anos.

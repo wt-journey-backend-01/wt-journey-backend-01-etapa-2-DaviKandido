@@ -10,7 +10,8 @@ const getAgentes = (req, res, next) => {
     }
 
     if (req.query.cargo) {
-      if (req.query.cargo !== "inspetor" && req.query.cargo !== "delegado") {
+      const cargosValidos = ["inspetor", "inspetora", "delegado", "delegada", "investigador", "escrivã", "escrivão", "perito", "perita"];
+      if (!cargosValidos.includes(req.query.cargo)) {
         return res.status(400).json({
           status: 400,
           message: "Parâmetros inválidos",
