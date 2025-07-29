@@ -11,10 +11,10 @@ const getCasos = (req, res, next) => {
         (caso) => caso.agente_id === req.query.agente_id
       );
 
-      if (!casosFiltrados.length === 0) {
+      if (casosFiltrados.length === 0) {
         return next(new ApiError("Casos nao encontrados", 404));
       }
-      
+
       res.status(200).json(casosFiltrados);
       return;
     }
@@ -32,12 +32,15 @@ const getCasos = (req, res, next) => {
           ],
         });
       }
-    }
 
-    if (req.query.status) {
       const casosFiltrados = casos.filter(
         (caso) => caso.status === req.query.status
       );
+
+      if (casosFiltrados.length === 0) {
+        return next(new ApiError("Casos nao encontrados", 404));
+      }
+
       res.status(200).json(casosFiltrados);
       return;
     }
@@ -59,8 +62,7 @@ const getSearch = (req, res, next) => {
           caso.descricao.toLowerCase().includes(req.query.q.toLowerCase())
       );
 
-
-      if (!casosFiltrados.length === 0) {
+      if (casosFiltrados.length === 0) {
         return next(new ApiError("Casos nao encontrados", 404));
       }
 
@@ -84,26 +86,19 @@ const getCasoById = (req, res, next) => {
     }
 
     if (req.query.agente_id) {
-      
       if (req.query.agente_id !== caso.agente_id) {
         return next(
-          new ApiError("Agente referente ao caso nao encontrado", 404)
+          new ApiError("O agente informado não corresponde ao agente responsável pelo caso.", 404)
         );
       }
 
-      const agenteQuery = agentesRepository.findById(req.query.agente_id);
-      if (!agenteQuery) {
-        return next(
-          new ApiError("Agente referente ao caso nao encontrado", 404)
-        );
-      }
-
-      const agente = agentesRepository.findById(caso.agente_id);
+      const agente = agentesRepository.findById(req.query.agente_id);
       if (!agente) {
         return next(
-          new ApiError("Agente referente ao caso nao encontrado", 404)
+          new ApiError("O agente informado não corresponde ao agente responsável pelo caso.", 404)
         );
       }
+
       res.status(200).json({ caso, agente });
       return;
     }
@@ -118,12 +113,9 @@ const createCaso = (req, res, next) => {
   try {
     const caso = req.body;
 
-
     const agente = agentesRepository.findById(caso.agente_id);
     if (!agente) {
-    return next(
-        new ApiError("Agente referente ao caso nao encontrado", 404)
-    );
+      return next(new ApiError("Agente referente ao caso nao encontrado", 404));
     }
 
     const casoCreado = casosRepository.create(caso);
@@ -142,7 +134,6 @@ const updateCaso = (req, res, next) => {
     if (!agente) {
       return next(new ApiError("Agente referente ao caso nao encontrado", 404));
     }
-
 
     const casoAtualizado = casosRepository.update(id, caso);
 
@@ -163,11 +154,11 @@ const updateCasoPartial = (req, res, next) => {
 
     if (casoPartial.agente_id) {
       const agente = agentesRepository.findById(casoPartial.agente_id);
-        if (!agente) {
-          return next(
-            new ApiError("Agente referente ao caso nao encontrado", 404)
-          );
-        }
+      if (!agente) {
+        return next(
+          new ApiError("Agente referente ao caso nao encontrado", 404)
+        );
+      }
     }
 
     const casoAtualizado = casosRepository.updatePartial(id, casoPartial);

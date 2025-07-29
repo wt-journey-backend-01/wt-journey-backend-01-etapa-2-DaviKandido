@@ -24,6 +24,35 @@ function validateSchema(schema) {
   };
 }
 
+function validateCargo(req, res, next) {
+  const cargosValidos = [
+    "inspetor",
+    "inspetora",
+    "delegado",
+    "delegada",
+    "investigador",
+    "escrivã",
+    "escrivão",
+    "perito",
+    "perita",
+  ];
+  if (req.query.cargo && !cargosValidos.includes(req.query.cargo)) {
+    return res.status(400).json({
+      status: 400,
+      message: "Parâmetros inválidos",
+      errors: [
+        {
+          cargo:
+            "O campo 'cargo' pode ser somente um dos seguintes valores: " +
+            cargosValidos.join(", "),
+        },
+      ],
+    });
+  }
+  next();
+}
+
 module.exports = {
   validateSchema,
+  validateCargo,
 };

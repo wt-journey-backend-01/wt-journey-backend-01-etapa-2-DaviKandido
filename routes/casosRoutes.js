@@ -7,11 +7,11 @@ const { validateSchema } = require("../utils/validateSchemas");
 
 
 
-/**
- * @openapi
+ /**
+ *  @openapi
  * components:
  *   schemas:
- *     Caso:
+ *     caso:
  *       type: object
  *       required:
  *         - id
@@ -31,7 +31,6 @@ const { validateSchema } = require("../utils/validateSchemas");
  *           enum: [aberto, solucionado]
  *         agente_id:
  *           type: string
- *
  */
 
 
@@ -44,7 +43,7 @@ const { validateSchema } = require("../utils/validateSchemas");
  *   get:
  *     summary: Retorna todos os caso.
  *     description: Essa rota Lista todos os casos.
- *     tags: [casos]
+ *     tags: [Casos]
  *     parameters:
  *       - in: query
  *         name: agente_id
@@ -100,7 +99,7 @@ router.get('/', casosController.getCasos);
  *   get:
  *     summary: Retorna todos os caso com a palavra da query string.
  *     description: Essa rota Lista todos os caso com a palavra da query string.
- *     tags: [casos]
+ *     tags: [Casos]
  *     parameters:
  *       - in: query
  *         name: q
@@ -150,7 +149,7 @@ router.get("/search", casosController.getSearch);
  *   get:
  *     summary: Retorna um caso.
  *     description: Essa rota Lista todos os casos.
- *     tags: [casos]
+ *     tags: [Casos]
  *     parameters:
  *       - in: path
  *         name: id
@@ -207,7 +206,7 @@ router.get('/:id', casosController.getCasoById);
  *   post:
  *     summary: Cria um caso
  *     description: Essa rota cria um novo caso.
- *     tags: [casos]
+ *     tags: [Casos]
  *     requestBody:
  *       required: true
  *       content:
@@ -267,7 +266,7 @@ router.post("/", validateSchema(casoPostSchema), casosController.createCaso);
  *   put:
  *     summary: Atualiza um caso
  *     description: Essa rota atualiza um caso.
- *     tags: [casos]
+ *     tags: [Casos]
  *     parameters:
  *       - in: path
  *         name: id
@@ -341,7 +340,7 @@ router.put("/:id", validateSchema(casoPutSchema), casosController.updateCaso);
  *   patch:
  *     summary: Atualiza um caso parcialmente
  *     description: Essa rota atualiza um caso parcialmente.
- *     tags: [casos]
+ *     tags: [Casos]
  *     parameters:
  *       - in: path
  *         name: id
@@ -412,7 +411,7 @@ router.patch('/:id', validateSchema(casoPatchSchema),casosController.updateCasoP
  *   delete:
  *     summary: deleta um caso
  *     description: Essa rota deleta um caso.
- *     tags: [casos]
+ *     tags: [Casos]
  *     parameters:
  *       - in: path
  *         name: id

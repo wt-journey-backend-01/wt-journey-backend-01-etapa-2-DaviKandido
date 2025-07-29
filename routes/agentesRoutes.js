@@ -1,10 +1,13 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const agentesController = require('../controllers/agentesController');
+const agentesController = require("../controllers/agentesController");
 
-const {agentePostSchema, agentePatchSchema, agentePutSchema  } = require('../utils/ZodSchemas');
-const {validateSchema} = require('../utils/validateSchemas');
-
+const {
+  agentePostSchema,
+  agentePatchSchema,
+  agentePutSchema,
+} = require("../utils/ZodSchemas");
+const { validateSchema, validateCargo } = require("../utils/validateSchemas");
 
 /**
  * @openapi
@@ -27,18 +30,15 @@ const {validateSchema} = require('../utils/validateSchemas');
  *           format: date
  *         cargo:
  *           type: string
- * 
  */
-
-
 
 // Lista todos os agentes registrados.
 /**
  * @openapi
  * /agentes:
  *   get:
- *     summary: Retorna todos os agente.
- *     description: Essa rota Lista todos os agentes.
+ *     summary: Retorna todos os agentes.
+ *     description: Essa rota lista todos os agentes.
  *     tags: [Agentes]
  *     parameters:
  *       - in: query
@@ -57,12 +57,16 @@ const {validateSchema} = require('../utils/validateSchemas');
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               example:
- *                 id: 401bccf5-cf9e-489d-8412-446cd169a0f1
- *                 nome: Rommel Carneiro
- *                 dataDeIncorporacao: 1992/10/04
- *                 cargo: delegado
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Agente'
+ *             examples:
+ *               ListaDeAgentes:
+ *                 value:
+ *                   - id: 401bccf5-cf9e-489d-8412-446cd169a0f1
+ *                     nome: Rommel Carneiro
+ *                     dataDeIncorporacao: 1992/10/04
+ *                     cargo: delegado
  *       404:
  *         description: Agentes não encontrados
  *         content:
@@ -81,18 +85,16 @@ const {validateSchema} = require('../utils/validateSchemas');
  *               example:
  *                 status: 500
  *                 message: Falha ao obter os agentes
- *
  */
-router.get('/', agentesController.getAgentes);
+router.get("/", validateCargo, agentesController.getAgentes);
 
-
-// Retorna os detalhes de um caso específico.
+// Retorna os detalhes de um agente específico.
 /**
  * @openapi
  * /agentes/{id}:
  *   get:
  *     summary: Retorna um agente.
- *     description: Essa rota Lista todos os agentes.
+ *     description: Essa rota retorna os detalhes de um agente.
  *     tags: [Agentes]
  *     parameters:
  *       - in: path
@@ -106,21 +108,23 @@ router.get('/', agentesController.getAgentes);
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               example:
- *                 id: 401bccf5-cf9e-489d-8412-446cd169a0f1
- *                 nome: Rommel Carneiro
- *                  dataDeIncorporacao: 1992/10/04
- *                  cargo: delegado
+ *               $ref: '#/components/schemas/Agente'
+ *             examples:
+ *               ExemploAgente:
+ *                 value:
+ *                   id: 401bccf5-cf9e-489d-8412-446cd169a0f1
+ *                   nome: Rommel Carneiro
+ *                   dataDeIncorporacao: 1992/10/04
+ *                   cargo: delegado
  *       404:
- *         description: Agente não encontrados
+ *         description: Agente não encontrado
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               example:
  *                 status: 404
- *                 message: Agente não encontrados
+ *                 message: Agente não encontrado
  *       500:
  *         description: Falha ao obter o agente
  *         content:
@@ -130,12 +134,10 @@ router.get('/', agentesController.getAgentes);
  *               example:
  *                 status: 500
  *                 message: Falha ao obter o agente
- *
  */
-router.get('/:id', agentesController.getAgenteById);
+router.get("/:id", agentesController.getAgenteById);
 
-
-// Cria um novo caso com os seguintes campos:
+// Cria um novo agente.
 /**
  * @openapi
  * /agentes:
@@ -161,43 +163,49 @@ router.get('/:id', agentesController.getAgenteById);
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               example:
- *                 id: 401bccf5-cf9e-489d-8412-446cd169a0f1
- *                 nome: Rommel Carneiro
- *                 dataDeIncorporacao: 1992/10/04
- *                 cargo: delegado
+ *               $ref: '#/components/schemas/Agente'
+ *             examples:
+ *               AgenteCriado:
+ *                 value:
+ *                   id: 401bccf5-cf9e-489d-8412-446cd169a0f1
+ *                   nome: Rommel Carneiro
+ *                   dataDeIncorporacao: 1992/10/04
+ *                   cargo: delegado
  *       400:
  *         description: Dados incorretos ou incompletos
  *         content:
  *           application/json:
  *             schema:
  *               type: object
- *               example:
- *                 status: 400
- *                 message: Parâmetros inválidos
- *                 errors:
- *                   - status: O campo 'status' pode ser somente 'aberto' ou 'solucionado'
- *                   - descricao: O campo 'descricao' precisa ter pelo menos 1 caractere 
-*       500:
+ *             example:
+ *               status: 400
+ *               message: Parâmetros inválidos
+ *               errors:
+ *                 - campo: nome
+ *                   erro: Campo obrigatório
+ *       500:
  *         description: Falha ao criar o agente
  *         content:
  *           application/json:
  *             schema:
  *               type: object
- *               example:
- *                 status: 500
- *                 message: Falha ao criar o agente 
+ *             example:
+ *               status: 500
+ *               message: Falha ao criar o agente
  */
-router.post("/", validateSchema(agentePostSchema), agentesController.createAgente);
+router.post(
+  "/",
+  validateSchema(agentePostSchema),
+  agentesController.createAgente
+);
 
-// Atualiza os dados de um caso por completo.
+// Atualiza todos os dados de um agente.
 /**
  * @openapi
  * /agentes/{id}:
  *   put:
  *     summary: Atualiza um agente
- *     description: Essa rota atualiza um agente.
+ *     description: Essa rota atualiza todos os dados de um agente.
  *     tags: [Agentes]
  *     parameters:
  *       - in: path
@@ -211,64 +219,54 @@ router.post("/", validateSchema(agentePostSchema), agentesController.createAgent
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/Agente'
- *           examples:
- *             Agente:
- *               value:
- *                 nome: Rommel Carneiro
- *                 dataDeIncorporacao: 1992/10/04
- *                 cargo: delegado
  *     responses:
  *       200:
  *         description: Agente atualizado com sucesso
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               example:
- *                 id: 401bccf5-cf9e-489d-8412-446cd169a0f1
- *                 nome: Rommel Carneiro
- *                 dataDeIncorporacao: 1992/10/04
- *                 cargo: delegado
+ *               $ref: '#/components/schemas/Agente'
  *       404:
- *         description: Agente nao encontrado
+ *         description: Agente não encontrado
  *         content:
  *           application/json:
  *             schema:
  *               type: object
- *               example:
- *                 status: 404
- *                 message: Agente nao encontrado
+ *             example:
+ *               status: 404
+ *               message: Agente não encontrado
  *       400:
- *         description: Dados incorretos ou incompletos
+ *         description: Dados incorretos
  *         content:
  *           application/json:
  *             schema:
  *               type: object
- *               example:
- *                 status: 400
- *                 message: Parâmetros inválidos
- *                 errors:
- *                   - status: O campo 'status' pode ser somente 'aberto' ou 'solucionado'
- *                   - descricao: O campo 'descricao' precisa ter pelo menos 1 caractere 
+ *             example:
+ *               status: 400
+ *               message: Erro de validação
  *       500:
- *         description: Falha ao atualizar o agente
+ *         description: Erro interno
  *         content:
  *           application/json:
  *             schema:
  *               type: object
- *               example:
- *                 status: 500
- *                 message: Falha ao atualizar o agente 
+ *             example:
+ *               status: 500
+ *               message: Erro no servidor
  */
-router.put('/:id', validateSchema(agentePutSchema), agentesController.updateAgente);
+router.put(
+  "/:id",
+  validateSchema(agentePutSchema),
+  agentesController.updateAgente
+);
 
-// Atualiza os dados de um caso parcialmente.
+// Atualiza parcialmente um agente.
 /**
  * @openapi
  * /agentes/{id}:
  *   patch:
  *     summary: Atualiza um agente parcialmente
- *     description: Essa rota atualiza um agente parcialmente.
+ *     description: Essa rota atualiza dados parciais de um agente.
  *     tags: [Agentes]
  *     parameters:
  *       - in: path
@@ -281,64 +279,53 @@ router.put('/:id', validateSchema(agentePutSchema), agentesController.updateAgen
  *         application/json:
  *           schema:
  *             $ref: '#/components/schemas/Agente'
- *           examples:
- *             Agente:
- *               value:
- *                 nome: Rommel Carneiro
- *                 dataDeIncorporacao: 1992/10/04
- *                 cargo: delegado
  *     responses:
  *       200:
  *         description: Agente atualizado com sucesso
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               example:
- *                 id: 401bccf5-cf9e-489d-8412-446cd169a0f1
- *                 nome: Rommel Carneiro
- *                 dataDeIncorporacao: 1992/10/04
- *                 cargo: delegado
+ *               $ref: '#/components/schemas/Agente'
  *       404:
- *         description: Agente nao encontrado
+ *         description: Agente não encontrado
  *         content:
  *           application/json:
  *             schema:
  *               type: object
- *               example:
- *                 status: 404
- *                 message: Agente nao encontrado
+ *             example:
+ *               status: 404
+ *               message: Agente não encontrado
  *       400:
- *         description: Dados incorretos ou incompletos
+ *         description: Erro de validação
  *         content:
  *           application/json:
  *             schema:
  *               type: object
- *               example:
- *                 status: 400
- *                 message: Parâmetros inválidos
- *                 errors:
- *                   - status: O campo 'status' pode ser somente 'aberto' ou 'solucionado'
- *                   - descricao: O campo 'descricao' precisa ter pelo menos 1 caractere 
+ *             example:
+ *               status: 400
+ *               message: Dados inválidos
  *       500:
- *         description: Falha ao atualizar o agente
+ *         description: Erro no servidor
  *         content:
  *           application/json:
  *             schema:
  *               type: object
- *               example:
- *                 status: 500
- *                 message: Falha ao atualizar o agente 
+ *             example:
+ *               status: 500
+ *               message: Falha ao atualizar o agente
  */
-router.patch('/:id', validateSchema(agentePatchSchema),agentesController.updateAgentePartial);
+router.patch(
+  "/:id",
+  validateSchema(agentePatchSchema),
+  agentesController.updateAgentePartial
+);
 
-
-// Remove um caso.
+// Deleta um agente.
 /**
  * @openapi
  * /agentes/{id}:
  *   delete:
- *     summary: deleta um agente
+ *     summary: Deleta um agente
  *     description: Essa rota deleta um agente.
  *     tags: [Agentes]
  *     parameters:
@@ -350,36 +337,25 @@ router.patch('/:id', validateSchema(agentePatchSchema),agentesController.updateA
  *     responses:
  *       204:
  *         description: Agente deletado com sucesso
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               example:
- *                 id: 401bccf5-cf9e-489d-8412-446cd169a0f1
- *                 nome: Rommel Carneiro
- *                 dataDeIncorporacao: 1992/10/04
- *                 cargo: delegado
- * 
  *       404:
- *         description: Agente nao encontrado
+ *         description: Agente não encontrado
  *         content:
  *           application/json:
  *             schema:
  *               type: object
- *               example:
- *                 status: 404
- *                 message: Agente nao encontrado
- * 
+ *             example:
+ *               status: 404
+ *               message: Agente não encontrado
  *       500:
  *         description: Falha ao deletar o agente
  *         content:
  *           application/json:
  *             schema:
  *               type: object
- *               example:
- *                 status: 500
- *                 message: Falha ao deletar o agente 
+ *             example:
+ *               status: 500
+ *               message: Falha ao deletar o agente
  */
-router.delete('/:id', agentesController.deleteAgente);
+router.delete("/:id", agentesController.deleteAgente);
 
 module.exports = router;

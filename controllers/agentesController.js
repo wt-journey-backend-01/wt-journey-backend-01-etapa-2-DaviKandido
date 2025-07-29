@@ -10,30 +10,6 @@ const getAgentes = (req, res, next) => {
     }
 
     if (req.query.cargo) {
-      const cargosValidos = [
-        "inspetor",
-        "inspetora",
-        "delegado",
-        "delegada",
-        "investigador",
-        "escrivã",
-        "escrivão",
-        "perito",
-        "perita",
-      ];
-      if (!cargosValidos.includes(req.query.cargo)) {
-        return res.status(400).json({
-          status: 400,
-          message: "Parâmetros inválidos",
-          errors: [
-            {
-              cargo:
-                "O campo 'cargo' pode ser somente um dos seguintes valores: inspetor, inspetora, delegado, delegada, investigador, escrivã, escrivão, perito, perita",
-            },
-          ],
-        });
-      }
-
       const agentesFiltrados = agentes.filter(
         (agente) => agente.cargo === req.query.cargo
       );
