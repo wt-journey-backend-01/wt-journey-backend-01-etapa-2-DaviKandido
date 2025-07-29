@@ -32,16 +32,10 @@ app.use((req, res, next) => {
 
 // Middleware de erro que trata 404 e demais erros
 app.use((err, req, res, next) => {
-  res.status(err.status || 500).json({
+  res.status(err.statusCode || 500).json({
+    status: err.statusCode || 500,
     message: err.message || "Something went wrong!",
-    status: err.status || 500,
-    url: req.url,
-    method: req.method,
-    query: req.query,
-    params: req.params,
-    headers: req.headers,
-    body: req.body,
-    errors: [{ ...err }], // opcional, útil para debug
+    errors: err.errors || null,
   });
 });
 

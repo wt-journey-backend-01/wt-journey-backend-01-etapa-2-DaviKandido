@@ -27,14 +27,10 @@ function validateSchema(schema) {
 function validateCargo(req, res, next) {
   const cargosValidos = [
     "inspetor",
-    "inspetora",
     "delegado",
-    "delegada",
     "investigador",
-    "escrivã",
     "escrivão",
     "perito",
-    "perita",
   ];
   if (req.query.cargo && !cargosValidos.includes(req.query.cargo)) {
     return res.status(400).json({

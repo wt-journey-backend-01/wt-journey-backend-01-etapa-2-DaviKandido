@@ -12,7 +12,11 @@ const getCasos = (req, res, next) => {
       );
 
       if (casosFiltrados.length === 0) {
-        return next(new ApiError("Casos nao encontrados", 404));
+        return next(
+          new ApiError("Casos nao encontrados", 404, [
+            { agente_id: "Agente informado não existe" },
+          ])
+        );
       }
 
       res.status(200).json(casosFiltrados);
@@ -21,16 +25,14 @@ const getCasos = (req, res, next) => {
 
     if (req.query.status) {
       if (req.query.status !== "aberto" && req.query.status !== "solucionado") {
-        return res.status(400).json({
-          status: 400,
-          message: "Parâmetros inválidos",
-          errors: [
+        return next(
+          new ApiError("Parâmetros inválidos", 400, [
             {
               status:
                 "O campo 'status' pode ser somente 'aberto' ou 'solucionado' ",
             },
-          ],
-        });
+          ])
+        );
       }
 
       const casosFiltrados = casos.filter(
@@ -63,7 +65,11 @@ const getSearch = (req, res, next) => {
       );
 
       if (casosFiltrados.length === 0) {
-        return next(new ApiError("Casos nao encontrados", 404));
+        return next(
+          new ApiError("Casos nao encontrados", 404, [
+            { q: "Nenhum caso encontrado" },
+          ])
+        );
       }
 
       res.status(200).json(casosFiltrados);
@@ -72,7 +78,13 @@ const getSearch = (req, res, next) => {
 
     res.status(200).json(casos);
   } catch (error) {
-    next(new ApiError("Falha ao obter os casos:" + error, 500));
+    next(
+      new ApiError("Falha ao obter os casos:" + error, 500, [
+        {
+          q: "Nenhum caso encontrado",
+        },
+      ])
+    );
   }
 };
 
@@ -82,30 +94,36 @@ const getCasoById = (req, res, next) => {
     const caso = casosRepository.findById(id);
 
     if (!caso) {
-      return next(new ApiError("Caso nao encontrado", 404));
+      return next(
+        new ApiError("Caso nao encontrado", 404, [
+          {
+            id: "O id informado nao corresponde a nenhum caso",
+          },
+        ])
+      );
     }
 
-    if (req.query.agente_id) {
-      if (req.query.agente_id !== caso.agente_id) {
-        return next(
-          new ApiError("O agente informado não corresponde ao agente responsável pelo caso.", 404)
-        );
-      }
-
-      const agente = agentesRepository.findById(req.query.agente_id);
-      if (!agente) {
-        return next(
-          new ApiError("O agente informado não corresponde ao agente responsável pelo caso.", 404)
-        );
-      }
-
-      res.status(200).json({ caso, agente });
-      return;
+    const agente = agentesRepository.findById(caso.agente_id);
+    if (!agente) {
+      return next(
+        new ApiError(
+          "O agente informado não corresponde ao agente responsável pelo caso.",
+          404,
+          [
+            {
+              agente_id:
+                "O agente informado nao corresponde ao agente responsavel pelo caso",
+            },
+          ]
+        )
+      );
     }
 
-    res.status(200).json(caso);
+    res.status(200).json({caso, agente});
   } catch (error) {
-    next(new ApiError("Falha ao obter o caso: " + error, 500));
+    next(
+      new ApiError("Falha ao obter o caso: " + error, 500)
+    );
   }
 };
 
@@ -115,7 +133,13 @@ const createCaso = (req, res, next) => {
 
     const agente = agentesRepository.findById(caso.agente_id);
     if (!agente) {
-      return next(new ApiError("Agente referente ao caso nao encontrado", 404));
+      return next(
+        new ApiError("Agente referente ao caso nao encontrado", 404, [
+          {
+            agente_id: "O agente informado nao corresponde a nenhum agente",
+          },
+        ])
+      );
     }
 
     const casoCreado = casosRepository.create(caso);

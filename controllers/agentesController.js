@@ -3,18 +3,23 @@ const ApiError = require("../utils/errorHandler");
 
 const getAgentes = (req, res, next) => {
   try {
-    const agentes = agentesRepository.findAll();
+    let agentes = [...agentesRepository.findAll()];
 
     if (!agentes) {
       return next(new ApiError("Agentes nao encontrados", 404));
     }
 
     if (req.query.cargo) {
-      const agentesFiltrados = agentes.filter(
-        (agente) => agente.cargo === req.query.cargo
+      agentes = agentes.filter(
+        (agente) => agente.cargo.toLowerCase() === req.query.cargo.toLowerCase()
       );
-      res.status(200).json(agentesFiltrados);
-      return;
+      if(agentes.length === 0){
+        return next(new ApiError("Agentes nao encontrados", 404, [
+          {
+            cargo: "O cargo informado nao corresponde a nenhum agente",
+          },
+        ]));
+      }
     }
 
     if (req.query.sort) {
@@ -22,16 +27,14 @@ const getAgentes = (req, res, next) => {
         req.query.sort !== "dataDeIncorporacao" &&
         req.query.sort !== "-dataDeIncorporacao"
       ) {
-        return res.status(400).json({
-          status: 400,
-          message: "Parâmetros inválidos",
-          errors: [
+        return next(
+          new ApiError("Parâmetros inválidos", 400, [
             {
               status:
                 "O campo 'sort' pode ser somente 'dataDeIncorporacao' ou '-dataDeIncorporacao' ",
             },
-          ],
-        });
+          ])
+        );
       }
 
       if (req.query.sort === "dataDeIncorporacao") {
@@ -60,7 +63,13 @@ const getAgenteById = (req, res, next) => {
     const agente = agentesRepository.findById(id);
 
     if (!agente) {
-      return next(new ApiError("Agente não encontrado", 404));
+      return next(new ApiError("Agente não encontrado", 404,
+        [
+          {
+            id: "O agente informado nao corresponde a nenhum agente",
+          },
+        ]
+      ));
     }
 
     res.status(200).json(agente);
@@ -86,7 +95,13 @@ const updateAgente = (req, res, next) => {
     const agenteAtualizado = agentesRepository.update(id, agente);
 
     if (!agenteAtualizado) {
-      return next(new ApiError("Agente nao encontrado", 404));
+      return next(new ApiError("Agente nao encontrado", 404,
+        [
+          {
+            id: "O agente informado nao corresponde a nenhum agente",
+          },
+        ]
+      ));
     }
 
     res.status(200).json(agenteAtualizado);
@@ -102,7 +117,13 @@ const updateAgentePartial = (req, res, next) => {
     const agenteAtualizado = agentesRepository.updatePartial(id, agentePartial);
 
     if (!agenteAtualizado) {
-      return next(new ApiError("Agente nao encontrado", 404));
+      return next(new ApiError("Agente nao encontrado", 404,
+        [
+          {
+            id: "O agente informado nao corresponde a nenhum agente",
+          },
+        ]
+      ));
     }
 
     res.status(200).json(agenteAtualizado);
@@ -117,7 +138,13 @@ const deleteAgente = (req, res, next) => {
     const deleted = agentesRepository.remove(id);
 
     if (!deleted) {
-      return next(new ApiError("agente nao encontrado", 404));
+      return next(new ApiError("agente nao encontrado", 404,
+        [
+          {
+            id: "O agente informado nao corresponde a nenhum agente",
+          },
+        ]
+      ));
     }
 
     res.status(204).send();
