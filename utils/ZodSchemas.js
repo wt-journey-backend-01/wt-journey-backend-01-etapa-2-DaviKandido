@@ -80,7 +80,7 @@ const baseCasosSchema = z
       error: () => ({
         message: "O campo 'agente_id' precisa ser um UUID v4",
       }),
-    }),
+    }).min(1, "O campo 'agente_id' precisa ter pelo menos 1 caractere"),
   })
   .strict();
 

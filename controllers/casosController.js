@@ -40,7 +40,7 @@ const getCasos = (req, res, next) => {
       );
 
       if (casosFiltrados.length === 0) {
-        return next(new ApiError("Casos nao encontrados", 404));
+        return next(new ApiError("Casos nao encontrados", 404, [{ status: "Nenhum caso encontrado" }]));
       }
 
       res.status(200).json(casosFiltrados);
@@ -74,9 +74,13 @@ const getSearch = (req, res, next) => {
 
       res.status(200).json(casosFiltrados);
       return;
+    }else{
+      return next(
+        new ApiError("Casos nao encontrados", 400, [
+          { q: "Parâmetro 'q' é obrigatório para busca" },
+        ])
+      );
     }
-
-    res.status(200).json(casos);
   } catch (error) {
     next(
       new ApiError("Falha ao obter os casos:" + error, 500, [
@@ -122,7 +126,11 @@ const getCasoById = (req, res, next) => {
     res.status(200).json({caso, agente});
   } catch (error) {
     next(
-      new ApiError("Falha ao obter o caso: " + error, 500)
+      new ApiError("Falha ao obter o caso: " + error, 500, [
+        {
+          id: "O id informado nao corresponde a nenhum caso",
+        },
+      ])
     );
   }
 };

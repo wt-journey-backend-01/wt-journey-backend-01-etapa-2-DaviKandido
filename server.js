@@ -7,6 +7,7 @@ app.use(express.urlencoded({ extended: true }));
 
 const casosRouter = require("./routes/casosRoutes");
 const agentesRouter = require("./routes/agentesRoutes");
+const ApiError = require("./utils/errorHandler");
 
 app.use((req, res, next) => {
   console.log(
@@ -25,8 +26,12 @@ const PORT = process.env.PORT || 3000;
 
 // Catch-all para rotas não encontradas → envia para o middleware de erro
 app.use((req, res, next) => {
-  const error = new Error("Page not found!");
-  error.status = 404;
+  const error = new ApiError("Page not found!", 404, [
+    {
+      path: req.url,
+      message: "Page not found!",
+    },
+  ]);
   next(error); // passa para o middleware de erro
 });
 
