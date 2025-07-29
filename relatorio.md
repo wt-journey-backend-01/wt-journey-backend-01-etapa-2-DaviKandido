@@ -1,59 +1,172 @@
 <sup>Esse é um feedback gerado por IA, ele pode conter erros.</sup>
 
-Você tem 5 créditos restantes para usar o sistema de feedback AI.
+Você tem 4 créditos restantes para usar o sistema de feedback AI.
 
 # Feedback para DaviKandido:
 
 Nota final: **69.6/100**
 
-Olá, DaviKandido! 👋🚀
+# Feedback para você, DaviKandido! 🚔✨
 
-Antes de mais nada, parabéns pelo empenho e pela entrega desse desafio tão completo de API REST com Node.js e Express! 🎉 Você estruturou seu projeto de forma bem organizada, usando controllers, repositories e rotas, o que já mostra maturidade no desenvolvimento backend. Além disso, mandou muito bem implementando validações com Zod, tratamento de erros customizados e até filtros bônus para casos e agentes! Isso é um diferencial que merece reconhecimento. 👏👏
-
----
-
-## 🎯 Pontos Fortes que Encontrei no Seu Código
-
-- **Arquitetura modular clara:** Você separou muito bem as responsabilidades entre `routes`, `controllers` e `repositories`. Isso facilita a manutenção e a escalabilidade do projeto.
-- **Uso correto dos middlewares do Express:** No `server.js` você configurou `express.json()` e `express.urlencoded()`, além do middleware para logging e tratamento global de erros. 👌
-- **Validação com Zod e middleware de validação:** Muito legal como você criou schemas para cada recurso e usou o middleware `validateSchema` para garantir a integridade dos dados.
-- **Filtros e ordenação bônus:** Implementou filtros por status e agente nos casos, além de ordenação crescente e decrescente na listagem de agentes.
-- **Mensagens de erro customizadas:** Para parâmetros inválidos, você criou respostas detalhadas, o que melhora a experiência do consumidor da API.
+Olá, Davi! Antes de tudo, quero parabenizá-lo pelo esforço e pela entrega do seu projeto! 🎉 Você construiu uma API RESTful bastante completa, com endpoints para agentes e casos, e organizou o código em módulos (rotas, controllers, repositories), o que demonstra um bom entendimento da arquitetura MVC. Além disso, você implementou filtros simples e ordenação para agentes, o que é um ótimo diferencial! 👏
 
 ---
 
-## 🔍 Análise Profunda dos Pontos que Precisam de Atenção
+## O que você mandou muito bem! 🎯
 
-### 1. Erros 404 ao buscar, atualizar ou deletar agentes e casos inexistentes
+- **Organização do projeto:** Seu código está bem modularizado, com pastas claras para `routes`, `controllers`, `repositories` e `utils`. Isso é fundamental para manter o projeto escalável e fácil de manter.
+- **Endpoints básicos:** Você implementou todos os métodos HTTP principais (GET, POST, PUT, PATCH, DELETE) tanto para agentes quanto para casos.
+- **Validações e tratamento de erros:** Usar o `Zod` para validação de payloads é uma ótima escolha e você integrou isso bem nos middlewares de validação.
+- **Filtros e ordenação:** Seu filtro por cargo e ordenação por data de incorporação no endpoint `/agentes` está funcionando corretamente, o que é um bônus importante.
+- **Tratamento de erros personalizado:** Seu middleware global para erros está bem estruturado e captura erros 404 e 500 com mensagens claras.
+- **Uso correto de status HTTP:** Você usou os códigos 200, 201 e 204 nos lugares certos para sucesso nas operações.
 
-Você implementou os endpoints para todos os métodos HTTP, o que é ótimo! Porém, notei que nos seus controllers, em alguns lugares, a lógica para detectar recursos inexistentes e disparar o erro 404 está com um pequeno detalhe que pode estar causando falha. Vou mostrar um exemplo no `casosController.js`:
+---
+
+## Pontos de atenção para melhorar e destravar sua API 🕵️‍♂️
+
+### 1. Falha ao retornar status 404 para recursos inexistentes (agentes e casos)
+
+Eu percebi que vários erros relacionados a retorno de status 404 para agentes ou casos inexistentes estão acontecendo. Por exemplo, quando você tenta buscar, atualizar ou deletar um agente ou caso que não existe, a API deveria responder com status 404, mas isso não está acontecendo corretamente.
+
+**Analisando seu código:**
+
+No `agentesController.js`, você tem isso:
 
 ```js
-if (!casosFiltrados.length === 0) {
-  return next(new ApiError("Casos nao encontrados", 404));
-}
+const getAgenteById = (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const agente = agentesRepository.findById(id);
+
+    if (!agente) {
+      return next(new ApiError("Agente não encontrado", 404));
+    }
+
+    res.status(200).json(agente);
+  } catch (error) {
+    next(new ApiError("Falha ao obter o agente: " + error, 500));
+  }
+};
 ```
 
-Aqui o problema é a expressão lógica. `!casosFiltrados.length === 0` é avaliada como `(!casosFiltrados.length) === 0`, o que não faz sentido e sempre retorna `false`. O correto seria verificar se o array está vazio assim:
+Isso está correto e deveria funcionar, mas o problema pode estar no `agentesRepository.js`:
 
 ```js
-if (casosFiltrados.length === 0) {
-  return next(new ApiError("Casos nao encontrados", 404));
-}
+const findById = (id) => agentes.find((agente) => agente.id === id);
 ```
 
-O mesmo padrão aparece em outros trechos, como no filtro por palavra-chave e no filtro por agente. Esse pequeno detalhe faz com que o erro 404 nunca seja disparado quando deveria, e consequentemente o teste espera um 404 mas recebe um 200 com array vazio.
+Aqui, se o agente não existir, `find` retorna `undefined`, o que é esperado. Então, o problema pode estar no uso do middleware de erro no `server.js`:
 
-**Por que isso é importante?**  
-Detectar corretamente que um recurso não existe e retornar 404 é fundamental para uma API RESTful bem comportada. Isso ajuda o cliente a entender que a busca não teve resultados e não que houve um erro interno ou sucesso com dados vazios.
+```js
+app.use((err, req, res, next) => {
+  res.status(err.status || 500).json({
+    message: err.message || "Something went wrong!",
+    status: err.status || 500,
+    // ...
+  });
+});
+```
+
+Isso também está correto.
+
+**Então, onde está o problema?**
+
+Seu código está correto para tratar o caso de agente não encontrado. Porém, a falha pode estar acontecendo porque o repositório `agentesRepository` está retornando um agente com `id` diferente do esperado, ou talvez o id passado na requisição não seja o mesmo formato que o seu array tem.
+
+**Dica:** Verifique se os IDs usados nas requisições são exatamente iguais aos IDs armazenados (lembre-se que eles são strings UUID). Por exemplo, no seu array de agentes, alguns IDs estão com letras maiúsculas/minúsculas? A comparação é case-sensitive.
+
+Além disso, repare que no array de agentes você tem um agente com `cargo: "escrivão"` e outro com `cargo: "escrivã"`. Isso pode causar confusão se você filtrar por cargo.
 
 ---
 
-### 2. Mensagens customizadas para parâmetros inválidos no filtro de agentes
+### 2. Endpoint `/casos/:id` com query `agente_id` para retornar dados do agente responsável
 
-Você tem uma validação legal para o parâmetro `cargo` no filtro de agentes, mas o teste bônus indica que ainda faltam mensagens customizadas para erros em argumentos inválidos, especialmente para o filtro por data de incorporação com ordenação.
+Você implementou o endpoint para buscar um caso pelo ID e, opcionalmente, retornar os dados do agente responsável se passar o query `agente_id`. Porém, o requisito bônus de "implementar endpoint de busca de agente responsável por caso" não passou nos testes.
 
-No seu controller `agentesController.js`, o filtro e ordenação estão assim:
+No seu `casosController.js`:
+
+```js
+const getCasoById = (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const caso = casosRepository.findById(id);
+
+    if (!caso) {
+      return next(new ApiError("Caso nao encontrado", 404));
+    }
+
+    if (req.query.agente_id) {
+      if (req.query.agente_id !== caso.agente_id) {
+        return next(
+          new ApiError("O agente informado não corresponde ao agente responsável pelo caso.", 404)
+        );
+      }
+
+      const agente = agentesRepository.findById(req.query.agente_id);
+      if (!agente) {
+        return next(
+          new ApiError("O agente informado não corresponde ao agente responsável pelo caso.", 404)
+        );
+      }
+
+      res.status(200).json({ caso, agente });
+      return;
+    }
+
+    res.status(200).json(caso);
+  } catch (error) {
+    next(new ApiError("Falha ao obter o caso: " + error, 500));
+  }
+};
+```
+
+**Aqui há um ponto importante:**
+
+- Se o `agente_id` passado na query não corresponde ao agente do caso, você retorna erro 404, o que está correto.
+- Se o agente não for encontrado, retorna erro 404, também correto.
+- Mas o que acontece se o `agente_id` não for passado? Você retorna só o caso, o que está certo.
+
+**Possível motivo do erro:**  
+No seu schema OpenAPI, o parâmetro `agente_id` está declarado como query, mas talvez os testes esperem que, ao buscar o caso pelo ID, o JSON retorne o caso com o objeto agente embutido, **sem precisar passar o agente_id na query**.
+
+Ou seja, o requisito pode estar pedindo que o endpoint `/casos/:id` sempre retorne o agente responsável junto com o caso, sem a necessidade de query param.
+
+**Como melhorar:**
+
+Você pode modificar o método para sempre retornar o caso com o agente embutido, assim:
+
+```js
+const getCasoById = (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const caso = casosRepository.findById(id);
+
+    if (!caso) {
+      return next(new ApiError("Caso nao encontrado", 404));
+    }
+
+    const agente = agentesRepository.findById(caso.agente_id);
+    if (!agente) {
+      return next(new ApiError("Agente responsável pelo caso não encontrado", 404));
+    }
+
+    res.status(200).json({ caso, agente });
+  } catch (error) {
+    next(new ApiError("Falha ao obter o caso: " + error, 500));
+  }
+};
+```
+
+Assim, você garante que o cliente sempre receba os dados do agente junto com o caso, o que é mais útil e atende melhor o requisito.
+
+---
+
+### 3. Filtros e ordenação de agentes por data de incorporação
+
+Você implementou o filtro por cargo e ordenação por `dataDeIncorporacao` no endpoint `/agentes` e isso está funcionando parcialmente.
+
+No seu `agentesController.js`:
 
 ```js
 if (req.query.sort) {
@@ -72,191 +185,133 @@ if (req.query.sort) {
       ],
     });
   }
-  // ordenação...
+
+  if (req.query.sort === "dataDeIncorporacao") {
+    agentes.sort(
+      (a, b) =>
+        new Date(a.dataDeIncorporacao) - new Date(b.dataDeIncorporacao)
+    );
+  }
+  if (req.query.sort === "-dataDeIncorporacao") {
+    agentes.sort(
+      (a, b) =>
+        new Date(b.dataDeIncorporacao) - new Date(a.dataDeIncorporacao)
+    );
+  }
 }
 ```
 
-Essa validação está correta, porém o teste bônus espera que você também entregue mensagens customizadas para outros parâmetros inválidos, como filtros em casos (`status` e `agente_id`) e para a busca textual.
+**Aqui está correto**, mas perceba que a ordenação está sendo feita diretamente no array original `agentes`, que vem do repositório. Isso pode causar efeitos colaterais se a mesma referência for usada em outras requisições.
 
-**Dica:** Considere centralizar a validação dos query params em middlewares separados para garantir consistência e reutilização, além de melhorar a clareza do código.
+**Sugestão:** clone o array antes de ordenar para evitar problemas:
+
+```js
+let agentesFiltrados = [...agentes];
+
+if (req.query.cargo) {
+  agentesFiltrados = agentesFiltrados.filter(
+    (agente) => agente.cargo === req.query.cargo
+  );
+}
+
+if (req.query.sort) {
+  if (req.query.sort === "dataDeIncorporacao") {
+    agentesFiltrados.sort(
+      (a, b) =>
+        new Date(a.dataDeIncorporacao) - new Date(b.dataDeIncorporacao)
+    );
+  } else if (req.query.sort === "-dataDeIncorporacao") {
+    agentesFiltrados.sort(
+      (a, b) =>
+        new Date(b.dataDeIncorporacao) - new Date(a.dataDeIncorporacao)
+    );
+  }
+}
+
+res.status(200).json(agentesFiltrados);
+```
+
+Dessa forma, você evita modificar o array original e garante que filtros e ordenação funcionem juntos corretamente.
 
 ---
 
-### 3. Resposta do endpoint GET `/casos/:id` com filtro por agente_id
+### 4. Mensagens de erro customizadas para argumentos inválidos
 
-No requisito bônus, você deveria retornar o caso junto com os dados do agente responsável quando a query `agente_id` for passada na rota `/casos/:id`.
+Você fez uma boa implementação de tratamento de erros com mensagens customizadas, mas algumas mensagens esperadas para parâmetros inválidos não estão exatamente iguais ao que o requisito pede.
 
-No seu controller `casosController.js` você tem:
+Por exemplo, no filtro de agentes por cargo, você tem um middleware `validateCargo`, mas ele não retorna mensagens personalizadas para cargos inválidos.
 
-```js
-if (req.query.agente_id) {
-  
-  if (req.query.agente_id !== caso.agente_id) {
-    return next(
-      new ApiError("Agente referente ao caso nao encontrado", 404)
-    );
-  }
+**Sugestão:**
 
-  const agenteQuery = agentesRepository.findById(req.query.agente_id);
-  if (!agenteQuery) {
-    return next(
-      new ApiError("Agente referente ao caso nao encontrado", 404)
-    );
-  }
-
-  const agente = agentesRepository.findById(caso.agente_id);
-  if (!agente) {
-    return next(
-      new ApiError("Agente referente ao caso nao encontrado", 404)
-    );
-  }
-  res.status(200).json({ caso, agente });
-  return;
-}
-```
-
-Aqui você faz duas buscas no agente (`agenteQuery` e depois `agente`), sendo que ambas buscam o mesmo id. Isso pode ser simplificado para evitar redundância:
+No arquivo `utils/validateSchemas.js`, você pode melhorar o middleware para validar o cargo e retornar um erro 400 com mensagem específica, algo como:
 
 ```js
-if (req.query.agente_id) {
-  if (req.query.agente_id !== caso.agente_id) {
-    return next(new ApiError("Agente referente ao caso nao encontrado", 404));
-  }
-
-  const agente = agentesRepository.findById(req.query.agente_id);
-  if (!agente) {
-    return next(new ApiError("Agente referente ao caso nao encontrado", 404));
-  }
-
-  res.status(200).json({ caso, agente });
-  return;
-}
-```
-
-Além disso, a mensagem de erro poderia ser mais clara, por exemplo: `"O agente informado não corresponde ao agente responsável pelo caso."`
-
----
-
-### 4. Pequenas inconsistências de mensagens e detalhes de documentação Swagger
-
-Notei que em algumas descrições do Swagger, há pequenos erros de digitação, como:
-
-```yaml
-summary: Retorna todos os agente.
-```
-
-O correto seria:
-
-```yaml
-summary: Retorna todos os agentes.
-```
-
-Além disso, em alguns exemplos, a indentação está um pouco desalinhada (exemplo em `/agentes/{id}`), o que pode impactar a geração da documentação.
-
----
-
-## 💡 Sugestões para Correção e Melhoria
-
-### Corrigindo a condição para array vazio
-
-No `casosController.js` e onde mais for necessário, substitua:
-
-```js
-if (!casosFiltrados.length === 0) {
-  // ...
-}
-```
-
-por
-
-```js
-if (casosFiltrados.length === 0) {
-  // ...
-}
-```
-
-### Simplificando busca do agente no caso
-
-No `getCasoById`, use:
-
-```js
-if (req.query.agente_id) {
-  if (req.query.agente_id !== caso.agente_id) {
-    return next(new ApiError("O agente informado não corresponde ao agente responsável pelo caso.", 404));
-  }
-
-  const agente = agentesRepository.findById(req.query.agente_id);
-  if (!agente) {
-    return next(new ApiError("Agente referente ao caso não encontrado", 404));
-  }
-
-  res.status(200).json({ caso, agente });
-  return;
-}
-```
-
-### Centralizando validações de query params (exemplo para `cargo` e `sort`)
-
-Você pode criar middlewares para validar filtros, por exemplo:
-
-```js
-function validateCargo(req, res, next) {
-  const cargosValidos = ["inspetor", "inspetora", "delegado", "delegada", "investigador", "escrivã", "escrivão", "perito", "perita"];
-  if (req.query.cargo && !cargosValidos.includes(req.query.cargo)) {
+const validateCargo = (req, res, next) => {
+  const validCargos = ["delegado", "inspetora", "investigador", "escrivã", "perito", "delegada", "escrivão"];
+  if (req.query.cargo && !validCargos.includes(req.query.cargo)) {
     return res.status(400).json({
       status: 400,
       message: "Parâmetros inválidos",
-      errors: [{
-        cargo: "O campo 'cargo' pode ser somente um dos seguintes valores: " + cargosValidos.join(", "),
-      }],
+      errors: [
+        {
+          campo: "cargo",
+          erro: `O campo 'cargo' deve ser um dos seguintes: ${validCargos.join(", ")}`
+        }
+      ]
     });
   }
   next();
-}
+};
 ```
 
-E usar na rota:
-
-```js
-router.get("/", validateCargo, agentesController.getAgentes);
-```
-
-Isso deixa seu controller mais limpo e o código mais organizado.
+Assim, você garante que o cliente saiba exatamente qual campo está errado e o motivo.
 
 ---
 
-## 📚 Recursos para Você Explorar
+### 5. Pequenos detalhes de consistência
 
-- Para entender melhor o tratamento correto de erros 404 e 400 e como criar respostas personalizadas:  
+- No array de agentes, percebi que alguns cargos estão escritos no masculino e outros no feminino (ex: "escrivã" e "escrivão"). Isso pode causar confusão na filtragem por cargo. O ideal é padronizar os valores para evitar erros.
+
+- No schema OpenAPI, o nome da entidade “caso” está em minúsculo, mas a convenção seria usar “Caso” com inicial maiúscula para manter padrão com “Agente”. Isso não afeta funcionalidade, mas ajuda na documentação.
+
+---
+
+## Recursos para você aprofundar e corrigir esses pontos 🚀
+
+- Para entender melhor o tratamento de erros e status 404/400:  
   https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/404  
-  https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400  
+  https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status/400
 
-- Para dominar o uso de middlewares e rotas no Express.js, recomendo este vídeo que explica muito bem a estruturação e fluxo das requisições:  
-  https://youtu.be/RSZHvQomeKE  
+- Para aprender mais sobre organização de rotas e middlewares no Express.js:  
+  https://expressjs.com/pt-br/guide/routing.html
 
-- Para aprender a validar dados e criar APIs robustas com Node.js e Express:  
-  https://youtu.be/yNDCRAz7CM8?si=Lh5u3j27j_a4w3A_  
+- Para aprimorar a arquitetura MVC e modularização:  
+  https://youtu.be/bGN_xNc4A1k?si=Nj38J_8RpgsdQ-QH
 
-- Para manipular arrays e filtros em JavaScript (fundamental para os filtros de agentes e casos):  
-  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI  
+- Para manipulação eficiente de arrays no JavaScript (filter, sort, find):  
+  https://youtu.be/glSgUKA5LjE?si=t9G2NsC8InYAU9cI
 
----
-
-## ✅ Resumo Rápido do Que Você Pode Melhorar
-
-- Corrigir a lógica que verifica se arrays estão vazios para disparar erro 404 corretamente.
-- Simplificar e melhorar a lógica de busca do agente no endpoint `/casos/:id` com query param `agente_id`.
-- Implementar mensagens de erro customizadas e consistentes para todos os filtros e parâmetros inválidos.
-- Revisar a documentação Swagger para corrigir pequenos erros de digitação e alinhamento.
-- Considerar centralizar validações de query params em middlewares para manter o controller limpo e organizado.
+- Para aprofundar no uso de status HTTP e respostas corretas em APIs REST:  
+  https://youtu.be/RSZHvQomeKE
 
 ---
 
-Davi, seu projeto está muito bem encaminhado! Você já domina conceitos importantes e estruturou o backend com cuidado. Agora, com esses ajustes pontuais, sua API vai ficar ainda mais robusta e profissional. Continue assim, buscando sempre entender o "porquê" dos erros e como melhorar a experiência do usuário da sua API. 🚀✨
+## Resumo rápido dos principais pontos para focar:
 
-Se precisar de ajuda para implementar essas sugestões, só chamar! Estou aqui para te ajudar a crescer cada vez mais. 💪😉
+- ✅ Corrija o retorno de status 404 para recursos (agentes e casos) inexistentes, garantindo que o middleware de erro seja acionado corretamente.
+- ✅ Ajuste o endpoint `/casos/:id` para retornar sempre o agente responsável junto com o caso, simplificando a API e atendendo melhor os requisitos.
+- ✅ Evite modificar o array original de agentes ao ordenar e filtrar — clone o array antes para evitar efeitos colaterais.
+- ✅ Melhore as mensagens de erro customizadas para argumentos inválidos, especialmente para filtros como `cargo`.
+- ✅ Padronize os valores dos campos que são usados para filtragem, como o campo `cargo` nos agentes, para evitar inconsistências.
+- ✅ Revise a documentação OpenAPI para manter consistência nos nomes dos schemas.
 
-Abraço e bons códigos! 👨‍💻👩‍💻
+---
+
+Davi, você está no caminho certo! Seu código mostra que você já domina muitos conceitos importantes e está aplicando boas práticas. Com essas melhorias, sua API vai ficar ainda mais robusta, clara e funcional. Continue assim, sempre buscando entender a causa raiz dos problemas e aprimorando seu código! 💪👨‍💻
+
+Se precisar, volte aos recursos indicados e não hesite em perguntar. Estou aqui para ajudar!
+
+Um abraço e bons códigos! 🚓✨
 
 > Caso queira tirar uma dúvida específica, entre em contato com o Chapter no nosso [discord](https://discord.gg/DryuHVnz).
 
